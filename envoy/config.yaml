@@ -1,0 +1,80 @@
+admin:
+  address:
+    socket_address:
+      address: ::0
+      port_value: 9901
+      ipv4_compat: true
+
+static_resources:
+  listeners:
+  - name: listener_0
+    address:
+      socket_address:
+        address: ::0
+        port_value: 8443
+        ipv4_compat: true
+    listener_filters:
+    - name: envoy.listener.tls_inspector
+      typed_config:
+          '@type': type.googleapis.com/envoy.extensions.filters.listener.tls_inspector.v3.TlsInspector
+    filter_chains:
+    - filter_chain_match:
+        transport_protocol: tls
+      filters:
+      - name: envoy.filters.network.sni_dynamic_forward_proxy
+        typed_config:
+          '@type': type.googleapis.com/envoy.extensions.filters.network.sni_dynamic_forward_proxy.v3.FilterConfig
+          port_value: 443
+          dns_cache_config:
+            name: dynamic_forward_proxy_cache_config
+            dns_lookup_family: V4_ONLY
+      - name: envoy.filters.network.tcp_proxy
+        typed_config:
+          '@type': type.googleapis.com/envoy.extensions.filters.network.tcp_proxy.v3.TcpProxy
+          stat_prefix: tcp_ingress
+          cluster: dynamic_forward_proxy_cluster
+          access_log:
+          - name: envoy.access_log.file
+            typed_config:
+              '@type': type.googleapis.com/envoy.extensions.access_loggers.file.v3.FileAccessLog
+              path: /dev/stdout
+          - name: envoy.access_loggers.tcp_grpc
+            typed_config:
+              '@type': type.googleapis.com/envoy.extensions.access_loggers.grpc.v3.TcpGrpcAccessLogConfig
+              common_config:
+                log_name: envoy.tcp_access_log
+                transport_api_version: V3
+                buffer_flush_interval: 1s
+                grpc_service:
+                  envoy_grpc:
+                    cluster_name: envoy_access_log_service
+
+  clusters:
+  - name: dynamic_forward_proxy_cluster
+    lb_policy: CLUSTER_PROVIDED
+    dns_lookup_family: V4_ONLY
+    cluster_type:
+      name: envoy.clusters.dynamic_forward_proxy
+      typed_config:
+        '@type': type.googleapis.com/envoy.extensions.clusters.dynamic_forward_proxy.v3.ClusterConfig
+        dns_cache_config:
+          name: dynamic_forward_proxy_cache_config
+          dns_lookup_family: V4_ONLY
+  - name: envoy_access_log_service
+    connect_timeout: 0.25s
+    type: LOGICAL_DNS
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: envoy_access_log_service
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: als_service
+                port_value: 50051
+    typed_extension_protocol_options:
+      envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+        "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+        explicit_http_config:
+          http2_protocol_options: {}

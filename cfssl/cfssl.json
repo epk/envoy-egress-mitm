@@ -1,0 +1,36 @@
+{
+  "signing": {
+    "default": {
+      "expiry": "240h"
+    },
+    "profiles": {
+      "intermediate-ca": {
+        "usages": [
+          "signing",
+          "digital signature",
+          "key encipherment",
+          "cert sign",
+          "crl sign",
+          "server auth",
+          "client auth"
+        ],
+        "expiry": "240h",
+        "ca_constraint": {
+          "is_ca": true,
+          "max_path_len": 0,
+          "max_path_len_zero": true
+        }
+      },
+      "certificate": {
+        "usages": [
+          "signing",
+          "digital signature",
+          "key encipherment",
+          "client auth",
+          "server auth"
+        ],
+        "expiry": "240h"
+      }
+    }
+  }
+}

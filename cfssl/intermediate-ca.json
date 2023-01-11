@@ -1,0 +1,10 @@
+{
+  "CN": "Test intermediate CA",
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "ca": {
+    "expiry": "240h"
+  }
+}
