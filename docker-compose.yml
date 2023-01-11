@@ -1,0 +1,18 @@
+version: '3'
+services:
+  envoy:
+    image: cgr.dev/chainguard/envoy
+    command: "--config-path /etc/envoy/envoy.yaml"
+    container_name: envoy
+    ports:
+    - 8443:8443
+    - 9901:9901
+    volumes:
+    - ./envoy/config.yaml:/etc/envoy/envoy.yaml
+
+  als_service:
+    build: .
+    container_name: als_service
+    command: "/app/bin/als"
+    volumes:
+    - ./tmp:/app/certs
