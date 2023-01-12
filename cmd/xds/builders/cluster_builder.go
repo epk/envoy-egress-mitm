@@ -129,7 +129,12 @@ func BuildManualUpstream(cert *types.Certificate) (*envoy_cluster_v3.Cluster, er
 	}
 
 	tlsConfig := &envoy_extensions_transport_sockets_tls_v3.UpstreamTlsContext{
+		Sni: cert.SNI,
 		CommonTlsContext: &envoy_extensions_transport_sockets_tls_v3.CommonTlsContext{
+			KeyLog: &envoy_extensions_transport_sockets_tls_v3.TlsKeyLog{
+				Path: fmt.Sprintf("/tmp/%s.tls.log", cert.SNI),
+			},
+
 			ValidationContextType: &envoy_extensions_transport_sockets_tls_v3.CommonTlsContext_ValidationContext{
 				ValidationContext: &envoy_extensions_transport_sockets_tls_v3.CertificateValidationContext{
 					TrustedCa: &envoy_core_v3.DataSource{

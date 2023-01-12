@@ -14,9 +14,12 @@ transport_socket:
   typed_config:
     '@type': type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
     common_tls_context:
+      key_log:
+        path: /tmp/example.com.tls.log
       validation_context:
         trusted_ca:
           filename: /etc/ssl/certs/ca-certificates.crt
+    sni: example.com
 type: LOGICAL_DNS
 typed_extension_protocol_options:
   envoy.extensions.upstreams.http.v3.HttpProtocolOptions:

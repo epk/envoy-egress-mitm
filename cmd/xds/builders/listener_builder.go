@@ -306,7 +306,7 @@ func buildHCM(domain string) (*anypb.Any, error) {
 	}
 
 	hcm := envoy_http_connection_manager_v3.HttpConnectionManager{
-		StatPrefix: "ingress_https",
+		StatPrefix: domain,
 		CodecType:  envoy_http_connection_manager_v3.HttpConnectionManager_AUTO,
 		UpgradeConfigs: []*envoy_http_connection_manager_v3.HttpConnectionManager_UpgradeConfig{
 			{
@@ -338,10 +338,10 @@ func buildHCM(domain string) (*anypb.Any, error) {
 		},
 		RouteSpecifier: &envoy_http_connection_manager_v3.HttpConnectionManager_RouteConfig{
 			RouteConfig: &envoy_route_v3.RouteConfiguration{
-				Name: "catch_all_route",
+				Name: domain,
 				VirtualHosts: []*envoy_route_v3.VirtualHost{
 					{
-						Name:    "catch_all",
+						Name:    domain,
 						Domains: []string{domain},
 						Routes: []*envoy_route_v3.Route{
 							{

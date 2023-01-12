@@ -41,7 +41,7 @@ func (c *CertStore) StartWatcher() (<-chan struct{}, error) {
 
 	c.watcher = watcher
 
-	ch := make(chan struct{}, 10)
+	ch := make(chan struct{}, 1)
 	c.updateCh = ch
 
 	go func() {

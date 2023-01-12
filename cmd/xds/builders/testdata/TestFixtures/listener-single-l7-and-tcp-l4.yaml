@@ -56,11 +56,11 @@ filter_chains:
           '@type': type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
           start_child_span: true
       route_config:
-        name: catch_all_route
+        name: example.com
         virtual_hosts:
         - domains:
           - example.com
-          name: catch_all
+          name: example.com
           routes:
           - match:
               prefix: /
@@ -68,7 +68,7 @@ filter_chains:
               cluster: example.com
               retry_policy:
                 retry_on: reset
-      stat_prefix: ingress_https
+      stat_prefix: example.com
       upgrade_configs:
       - enabled: true
         upgrade_type: websocket
