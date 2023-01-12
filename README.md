@@ -13,6 +13,7 @@ This is highly experimental.
 #### Running
 ```bash
 # Download deps
+export CGO_ENABLED=0
 go mod download
 
 # Create root and intermediate CA
