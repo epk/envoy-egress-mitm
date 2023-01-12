@@ -1,8 +1,12 @@
 ## Envoy Egress MITM
 
-WIP (really scrappy)
+A proof of concept that:
+- Starts as a L4 SNI forward proxy
+- Mints self signed certificates based on SNI
+- Hijacks/MITMs subsequent requests for the given SNI host
 
-A proof of concept Envoy configured as a L4 SNI forward proxy that lazily mints self signed certificates based on SNI.
+
+This is highly experimental.
 
 ## Getting started
 
@@ -28,16 +32,28 @@ cat intermediate-ca.crt >> combined.crt
 cd ..
 
 # Start up Envoy + ALS service
-mkdir -p tmp
-docker-compose up -d --wait
+docker-compose up --force-recreate --build -d --wait
 ```
 
 #### Demo
 ```bash
 # Make some requests
-curl -s -o /dev/null https://google.com --connect-to google.com:443:localhost:8443
-curl -s -o /dev/null https://twitter.com --connect-to twitter.com:443:localhost:8443
+curl -sv -o /dev/null https://www.google.com --connect-to www.google.com:443:localhost:8443
 
-# Check for certificates
-ls -alR tmp
+# Second request should fail
+curl -sv -o /dev/null https://www.google.com --connect-to www.google.com:443:localhost:8443
+
+# Try again with self signed CA
+curl -sv -o /dev/null https://www.google.com --connect-to www.google.com:443:localhost:8443 --cacert ./cfssl/combined.crt
+
+
+# Repeat for any other hosts of your liking
+# First request over L4
+curl -sv -o /dev/null https://www.reddit.com --connect-to www.reddit.com:443:localhost:8443
+
+# Second request fails
+curl -sv -o /dev/null https://www.reddit.com --connect-to www.reddit.com:443:localhost:8443
+
+# Request with self signed CA goes through
+curl -sv -o /dev/null https://www.reddit.com --connect-to www.reddit.com:443:localhost:8443 --cacert ./cfssl/combined.crt
 ```

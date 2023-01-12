@@ -5,8 +5,14 @@ go 1.19
 require (
 	github.com/cloudflare/cfssl v1.6.3
 	github.com/envoyproxy/go-control-plane v0.10.3
-	google.golang.org/grpc v1.52.0
+	github.com/golang/protobuf v1.5.2
+	github.com/google/go-cmp v0.5.9
+	google.golang.org/grpc v1.52.0-dev
+	google.golang.org/protobuf v1.28.1
+	gopkg.in/yaml.v2 v2.4.0
 )
+
+require golang.org/x/oauth2 v0.0.0-20221014153046-6fdb5e3db783 // indirect
 
 require (
 	cloud.google.com/go/compute v1.12.1 // indirect
@@ -23,13 +29,13 @@ require (
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/envoyproxy/protoc-gen-validate v0.6.7 // indirect
 	github.com/form3tech-oss/jwt-go v3.2.3+incompatible // indirect
+	github.com/fsnotify/fsnotify v1.6.0
 	github.com/fullstorydev/grpcurl v1.8.1 // indirect
 	github.com/go-sql-driver/mysql v1.6.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/glog v1.0.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/mock v1.5.0 // indirect
-	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/btree v1.0.1 // indirect
 	github.com/google/certificate-transparency-go v1.1.2-0.20210511102531-373a877eec92 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
@@ -82,15 +88,12 @@ require (
 	golang.org/x/crypto v0.0.0-20220824171710-5757bc0c5503 // indirect
 	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4 // indirect
 	golang.org/x/net v0.4.0 // indirect
-	golang.org/x/oauth2 v0.0.0-20221014153046-6fdb5e3db783 // indirect
 	golang.org/x/sys v0.3.0 // indirect
 	golang.org/x/text v0.5.0 // indirect
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba // indirect
 	golang.org/x/tools v0.1.12 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20221118155620-16455021b5e6 // indirect
-	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/cheggaaa/pb.v1 v1.0.28 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 	sigs.k8s.io/yaml v1.2.0 // indirect
 )

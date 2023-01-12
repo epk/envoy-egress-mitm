@@ -15,4 +15,14 @@ services:
     container_name: als_service
     command: "/app/bin/als"
     volumes:
-    - ./tmp:/app/certs
+    - certs:/app/certs
+
+  xds_service:
+    build: .
+    container_name: xds_service
+    command: "/app/bin/xds"
+    volumes:
+    - certs:/app/certs
+
+volumes:
+  certs:

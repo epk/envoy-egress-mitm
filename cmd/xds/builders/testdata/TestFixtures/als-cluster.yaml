@@ -1,0 +1,17 @@
+dns_lookup_family: V4_ONLY
+load_assignment:
+  cluster_name: envoy_access_log_service
+  endpoints:
+  - lb_endpoints:
+    - endpoint:
+        address:
+          socket_address:
+            address: als_service
+            port_value: 50051
+name: envoy_access_log_service
+type: LOGICAL_DNS
+typed_extension_protocol_options:
+  envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+    '@type': type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+    explicit_http_config:
+      http2_protocol_options: {}

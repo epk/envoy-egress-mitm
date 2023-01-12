@@ -24,8 +24,6 @@ func (a *als) StreamAccessLogs(stream envoy_service_accesslog_v3.AccessLogServic
 
 		for _, entry := range req.GetTcpLogs().GetLogEntry() {
 			sni := entry.GetCommonProperties().GetTlsProperties().GetTlsSniHostname()
-
-			log.Println("SNI:", sni)
 			if err := createCert(sni); err != nil {
 				log.Println("Error creating cert:", err)
 			}

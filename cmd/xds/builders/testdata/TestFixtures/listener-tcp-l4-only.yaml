@@ -1,0 +1,39 @@
+address:
+  socket_address:
+    address: 0.0.0.0
+    port_value: 8443
+filter_chains:
+- filter_chain_match:
+    transport_protocol: tls
+  filters:
+  - name: envoy.filters.network.sni_dynamic_forward_proxy
+    typed_config:
+      '@type': type.googleapis.com/envoy.extensions.filters.network.sni_dynamic_forward_proxy.v3.FilterConfig
+      dns_cache_config:
+        dns_lookup_family: V4_ONLY
+        name: dynamic_forward_proxy_cache_config
+      port_value: 443
+  - name: envoy.filters.network.tcp_proxy
+    typed_config:
+      '@type': type.googleapis.com/envoy.extensions.filters.network.tcp_proxy.v3.TcpProxy
+      access_log:
+      - name: envoy.access_loggers.file
+        typed_config:
+          '@type': type.googleapis.com/envoy.extensions.access_loggers.file.v3.FileAccessLog
+          path: /dev/stdout
+      - name: envoy.access_loggers.tcp_grpc
+        typed_config:
+          '@type': type.googleapis.com/envoy.extensions.access_loggers.grpc.v3.TcpGrpcAccessLogConfig
+          common_config:
+            grpc_service:
+              envoy_grpc:
+                cluster_name: envoy_access_log_service
+            log_name: tcp_ingress
+            transport_api_version: V3
+      cluster: dynamic_forward_proxy_cluster
+      stat_prefix: tcp_ingress
+listener_filters:
+- name: envoy.filters.listener.tls_inspector
+  typed_config:
+    '@type': type.googleapis.com/envoy.extensions.filters.listener.tls_inspector.v3.TlsInspector
+name: listener_0

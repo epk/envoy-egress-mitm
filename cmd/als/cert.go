@@ -9,6 +9,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+
+	"github.com/epk/envoy-egress-mitm/types"
 )
 
 const (
@@ -29,24 +31,15 @@ type certConfigkey struct {
 }
 
 func createCert(sni string) error {
-	crtFile := filepath.Join(certsDir, sni, "cert.crt")
-	keyFile := filepath.Join(certsDir, sni, "cert.key")
+	outFile := filepath.Join(certsDir, sni+".json")
 
 	// check if a cert already exists
-	if _, err := os.Stat(crtFile); err == nil {
-		if _, err := os.Stat(keyFile); err == nil {
-			log.Println("Cert already exists for", sni)
-			return nil
-		}
+	if _, err := os.Stat(outFile); err == nil {
+		return nil
 	}
 
 	// create the cert
-	log.Println("Creating cert for", sni, "at", crtFile, "and", keyFile)
-
-	err := os.MkdirAll(filepath.Join(certsDir, sni), 0755)
-	if err != nil {
-		return fmt.Errorf("error creating cert dir: %w", err)
-	}
+	log.Println("Creating cert for", sni, "at", outFile)
 
 	tmpDir, err := os.MkdirTemp("", sni)
 	if err != nil {
@@ -101,40 +94,35 @@ func createCert(sni string) error {
 		return fmt.Errorf("cfssljson failed: %w", err)
 	}
 
-	// Copy the cert and key to the correct location
 	cert := filepath.Join(tmpDir, "cert.pem")
-	if err := copyFile(cert, crtFile); err != nil {
-		return fmt.Errorf("error copying cert: %w", err)
+	certKey := filepath.Join(tmpDir, "cert-key.pem")
+
+	certBytes, err := os.ReadFile(cert)
+	if err != nil {
+		return fmt.Errorf("error reading certificate file: %w", err)
 	}
 
-	// Copy the cert and key to the correct location
-	certKey := filepath.Join(tmpDir, "cert-key.pem")
-	if err := copyFile(certKey, keyFile); err != nil {
-		return fmt.Errorf("error copying key: %w", err)
+	keyBytes, err := os.ReadFile(certKey)
+	if err != nil {
+		return fmt.Errorf("error reading certificate key file: %w", err)
+	}
+
+	out := &types.Certificate{
+		Cert: certBytes,
+		Key:  keyBytes,
+		SNI:  sni,
+	}
+
+	raw, err := json.Marshal(out)
+	if err != nil {
+		return fmt.Errorf("error marshalling json  : %w", err)
+	}
+
+	if err := os.WriteFile(outFile, raw, 0644); err != nil {
+		return fmt.Errorf("error writing json to file: %w", err)
 	}
 
 	defer os.RemoveAll(tmpDir)
-	return nil
-}
-
-func copyFile(src, dst string) error {
-	if in, err := os.Open(src); err == nil {
-		defer in.Close()
-
-		out, err := os.Create(dst)
-		if err != nil {
-			return fmt.Errorf("error creating key file: %w", err)
-		}
-
-		if _, err := io.Copy(out, in); err != nil {
-			return fmt.Errorf("error copying key: %w", err)
-		}
-
-		if err := out.Close(); err != nil {
-			return fmt.Errorf("error closing key file: %w", err)
-		}
-	}
-
 	return nil
 }
 
