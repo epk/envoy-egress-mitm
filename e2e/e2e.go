@@ -47,31 +47,31 @@ func main() {
 		return domains[i].RootDomain < domains[j].RootDomain
 	})
 
-	log.Println("Starting test run....")
-	log.Println("Total domains:", len(domains))
+	// log.Println("Starting test run....")
+	// log.Println("Total domains:", len(domains))
 
 	// Test without Proxy
 	successfulDomains := runHTTPTests(newProxyClient(false, nil), domains)
-	log.Println("Successful 200 OK(s) without proxy:", len(successfulDomains))
 
 	// Test with Proxy but without injecting root CA
-	tcpProxysuccessfulDomains := runHTTPTests(newProxyClient(true, nil), domains)
-	log.Println("Successful 200 OK(s) with TCP/L4 proxy", len(tcpProxysuccessfulDomains))
+	// tcpProxysuccessfulDomains := runHTTPTests(newProxyClient(true, nil), domains)
+	// log.Println("Successful 200 OK(s) with TCP/L4 proxy", len(tcpProxysuccessfulDomains))
 
-	log.Println("Sleeping for 2 minutes to allow for Envoy to pick up new config changes...")
-	time.Sleep(2 * time.Minute)
+	// log.Println("Sleeping for 2 minutes to allow for Envoy to pick up new config changes...")
+	// time.Sleep(2 * time.Minute)
 
 	// Test with Proxy and injecting root CA
 	httpsProxysuccessfulDomains := runHTTPTests(newProxyClient(true, certPool), domains)
-	log.Println("Successful 200 OK(s) with HTTPS/L7 proxy", len(httpsProxysuccessfulDomains))
+
+	fmt.Printf("%d,%d\n", len(successfulDomains), len(httpsProxysuccessfulDomains))
 
 	// Print difference between no proxy and TCP proxy
-	log.Println("Domains that failed with TCP proxy but succeeded without proxy:")
-	log.Println(getDiff(successfulDomains, tcpProxysuccessfulDomains))
+	// log.Println("Domains that failed with TCP proxy but succeeded without proxy:")
+	// log.Println(getDiff(successfulDomains, tcpProxysuccessfulDomains))
 
-	// Print difference between no proxy and HTTPS proxy
-	log.Println("Domains that failed with HTTPS proxy but succeeded without proxy:")
-	log.Println(getDiff(successfulDomains, httpsProxysuccessfulDomains))
+	// // Print difference between no proxy and HTTPS proxy
+	// log.Println("Domains that failed with HTTPS proxy but succeeded without proxy:")
+	// log.Println(getDiff(successfulDomains, httpsProxysuccessfulDomains))
 }
 
 func getDiff(a, b []string) []string {
