@@ -46,6 +46,12 @@ func Reconcile(ctx context.Context, cache envoy_cache_v3.SnapshotCache, certs []
 		}
 		secrets = append(secrets, secret)
 
+		validationSecret, err := builders.BuildValidationContextSecret(cert)
+		if err != nil {
+			return fmt.Errorf("failed to build validation secret: %w", err)
+		}
+		secrets = append(secrets, validationSecret)
+
 		cluster, err := builders.BuildManualUpstream(cert)
 		if err != nil {
 			return fmt.Errorf("failed to build manual upstream cluster: %w", err)

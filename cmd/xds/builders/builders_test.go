@@ -30,9 +30,11 @@ func TestFixtures(t *testing.T) {
 		got, err := builders.BuildListener(
 			[]*types.Certificate{
 				{
-					SNI:  "example.com",
-					Cert: []byte("cert"),
-					Key:  []byte("key"),
+					SNI:    "example.com",
+					Cert:   []byte("cert"),
+					Key:    []byte("key"),
+					CAName: "my custom CA",
+					CA:     []byte("ca"),
 				},
 			})
 		if err != nil {
@@ -46,14 +48,18 @@ func TestFixtures(t *testing.T) {
 		got, err := builders.BuildListener(
 			[]*types.Certificate{
 				{
-					SNI:  "example.com",
-					Cert: []byte("cert"),
-					Key:  []byte("key"),
+					SNI:    "example.com",
+					Cert:   []byte("cert"),
+					Key:    []byte("key"),
+					CAName: "my custom CA",
+					CA:     []byte("ca"),
 				},
 				{
-					SNI:  "example2.com",
-					Cert: []byte("cert2"),
-					Key:  []byte("key2"),
+					SNI:    "example2.com",
+					Cert:   []byte("cert2"),
+					Key:    []byte("key2"),
+					CAName: "my custom CA2",
+					CA:     []byte("ca 2"),
 				},
 			})
 		if err != nil {
@@ -83,9 +89,27 @@ func TestFixtures(t *testing.T) {
 
 	t.Run("secret", func(t *testing.T) {
 		got, err := builders.BuildSecret(&types.Certificate{
-			SNI:  "example.com",
-			Cert: []byte("cert"),
-			Key:  []byte("key"),
+			SNI:    "example.com",
+			Cert:   []byte("cert"),
+			Key:    []byte("key"),
+			CAName: "my custom CA",
+			CA:     []byte("ca"),
+		})
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		assertFixture(t, got)
+	})
+
+	t.Run("validation-secret", func(t *testing.T) {
+		got, err := builders.BuildValidationContextSecret(&types.Certificate{
+			SNI:    "example.com",
+			Cert:   []byte("cert"),
+			Key:    []byte("key"),
+			CAName: "my custom CA",
+			CA:     []byte("ca"),
 		})
 
 		if err != nil {
@@ -97,9 +121,11 @@ func TestFixtures(t *testing.T) {
 
 	t.Run("manual-upstream-cluster", func(t *testing.T) {
 		got, err := builders.BuildManualUpstream(&types.Certificate{
-			SNI:  "example.com",
-			Cert: []byte("cert"),
-			Key:  []byte("key"),
+			SNI:    "example.com",
+			Cert:   []byte("cert"),
+			Key:    []byte("key"),
+			CAName: "my custom CA",
+			CA:     []byte("ca"),
 		})
 
 		if err != nil {

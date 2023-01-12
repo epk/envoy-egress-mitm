@@ -248,8 +248,32 @@ func buildFileAccessLog() (*anypb.Any, error) {
 
 func buildDownstreamTLSContext(cert *types.Certificate) (*anypb.Any, error) {
 	cfg := &envoy_transport_sockets_tls_v3.DownstreamTlsContext{
+		RequireClientCertificate: wrapperspb.Bool(true),
 		CommonTlsContext: &envoy_transport_sockets_tls_v3.CommonTlsContext{
 			AlpnProtocols: []string{"h2,http/1.1"},
+			ValidationContextType: &envoy_transport_sockets_tls_v3.CommonTlsContext_ValidationContextSdsSecretConfig{
+				ValidationContextSdsSecretConfig: &envoy_transport_sockets_tls_v3.SdsSecretConfig{
+					Name: cert.CAName,
+					SdsConfig: &envoy_core_v3.ConfigSource{
+						ResourceApiVersion: envoy_core_v3.ApiVersion_V3,
+						ConfigSourceSpecifier: &envoy_core_v3.ConfigSource_ApiConfigSource{
+							ApiConfigSource: &envoy_core_v3.ApiConfigSource{
+								ApiType:             envoy_core_v3.ApiConfigSource_GRPC,
+								TransportApiVersion: envoy_core_v3.ApiVersion_V3,
+								GrpcServices: []*envoy_core_v3.GrpcService{
+									{
+										TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
+											EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
+												ClusterName: "xds_cluster",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
 			TlsCertificateSdsSecretConfigs: []*envoy_transport_sockets_tls_v3.SdsSecretConfig{
 				{
 					Name: cert.SNI,

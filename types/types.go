@@ -5,4 +5,7 @@ type Certificate struct {
 
 	Key  []byte `json:"key,omitempty"`
 	Cert []byte `json:"cert,omitempty"`
+
+	CAName string `json:"ca_name,omitempty"`
+	CA     []byte `json:"ca,omitempty"`
 }

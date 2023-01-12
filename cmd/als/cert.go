@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/epk/envoy-egress-mitm/cfssl"
 	"github.com/epk/envoy-egress-mitm/types"
 )
 
@@ -111,6 +112,9 @@ func createCert(sni string) error {
 		Cert: certBytes,
 		Key:  keyBytes,
 		SNI:  sni,
+
+		CAName: fmt.Sprintf("intermediate-ca-%s", sni),
+		CA:     cfssl.CA,
 	}
 
 	raw, err := json.Marshal(out)

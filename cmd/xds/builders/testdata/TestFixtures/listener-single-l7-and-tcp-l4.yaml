@@ -83,6 +83,17 @@ filter_chains:
                   cluster_name: xds_cluster
               transport_api_version: V3
             resource_api_version: V3
+        validation_context_sds_secret_config:
+          name: my custom CA
+          sds_config:
+            api_config_source:
+              api_type: GRPC
+              grpc_services:
+              - envoy_grpc:
+                  cluster_name: xds_cluster
+              transport_api_version: V3
+            resource_api_version: V3
+      require_client_certificate: true
 listener_filters:
 - name: envoy.filters.listener.tls_inspector
   typed_config:
