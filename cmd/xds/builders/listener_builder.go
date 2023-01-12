@@ -10,7 +10,6 @@ import (
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	envoy_file_access_log_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/access_loggers/file/v3"
 	envoy_grpc_access_log_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/access_loggers/grpc/v3"
-	envoy_http_dynamic_forward_proxy_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/dynamic_forward_proxy/v3"
 	envoy_http_router_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/router/v3"
 	envoy_extensions_filters_listener_tls_inspector_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/listener/tls_inspector/v3"
 	envoy_http_connection_manager_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
@@ -295,11 +294,6 @@ func buildHCM(domain string) (*anypb.Any, error) {
 		return nil, fmt.Errorf("failed to build http router: %w", err)
 	}
 
-	dynamicForwardProxy, err := buildHTTPDynamicForwardProxy()
-	if err != nil {
-		return nil, fmt.Errorf("failed to build dynamic forward proxy: %w", err)
-	}
-
 	accesslog, err := buildFileAccessLog()
 	if err != nil {
 		return nil, fmt.Errorf("failed to build access log: %w", err)
@@ -323,12 +317,6 @@ func buildHCM(domain string) (*anypb.Any, error) {
 			},
 		},
 		HttpFilters: []*envoy_http_connection_manager_v3.HttpFilter{
-			{
-				Name: "envoy.filters.http.dynamic_forward_proxy",
-				ConfigType: &envoy_http_connection_manager_v3.HttpFilter_TypedConfig{
-					TypedConfig: dynamicForwardProxy,
-				},
-			},
 			{
 				Name: wellknown.Router,
 				ConfigType: &envoy_http_connection_manager_v3.HttpFilter_TypedConfig{
@@ -395,23 +383,6 @@ func buildHTTPRouter() (*anypb.Any, error) {
 	}
 
 	return routerAny, nil
-}
-
-func buildHTTPDynamicForwardProxy() (*anypb.Any, error) {
-	cfg := &envoy_http_dynamic_forward_proxy_v3.FilterConfig{
-		DnsCacheConfig: defaultDNSCacheConfig(),
-	}
-
-	if err := cfg.ValidateAll(); err != nil {
-		return nil, fmt.Errorf("invalid http dynamic forward proxy config: %w", err)
-	}
-
-	cfgAny, err := anypb.New(cfg)
-	if err != nil {
-		return nil, fmt.Errorf("failed to convert http dynamic forward proxy to any: %w", err)
-	}
-
-	return cfgAny, nil
 }
 
 func buildTLSInspector() (*anypb.Any, error) {

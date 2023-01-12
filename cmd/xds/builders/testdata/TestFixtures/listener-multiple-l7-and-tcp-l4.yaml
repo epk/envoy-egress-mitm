@@ -45,12 +45,6 @@ filter_chains:
           '@type': type.googleapis.com/envoy.extensions.access_loggers.file.v3.FileAccessLog
           path: /dev/stdout
       http_filters:
-      - name: envoy.filters.http.dynamic_forward_proxy
-        typed_config:
-          '@type': type.googleapis.com/envoy.extensions.filters.http.dynamic_forward_proxy.v3.FilterConfig
-          dns_cache_config:
-            dns_lookup_family: V4_ONLY
-            name: dynamic_forward_proxy_cache_config
       - name: envoy.filters.http.router
         typed_config:
           '@type': type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
@@ -102,12 +96,6 @@ filter_chains:
           '@type': type.googleapis.com/envoy.extensions.access_loggers.file.v3.FileAccessLog
           path: /dev/stdout
       http_filters:
-      - name: envoy.filters.http.dynamic_forward_proxy
-        typed_config:
-          '@type': type.googleapis.com/envoy.extensions.filters.http.dynamic_forward_proxy.v3.FilterConfig
-          dns_cache_config:
-            dns_lookup_family: V4_ONLY
-            name: dynamic_forward_proxy_cache_config
       - name: envoy.filters.http.router
         typed_config:
           '@type': type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
