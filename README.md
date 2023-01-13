@@ -32,7 +32,7 @@ cat ca.crt >> combined.crt
 cat intermediate-ca.crt >> combined.crt
 cd ..
 
-# Start up Envoy + ALS service
+# Start up Envoy + ALS service + xDS service
 docker-compose up --force-recreate --build -d --wait
 ```
 
@@ -57,4 +57,9 @@ curl -sv -o /dev/null https://www.reddit.com --connect-to www.reddit.com:443:loc
 
 # Request with self signed CA goes through
 curl -sv -o /dev/null https://www.reddit.com --connect-to www.reddit.com:443:localhost:8443 --cacert ./cfssl/combined.crt
+
+# Or run and e2e script that tests the top 500 domains
+go run ./e2e -i 5 -p
+cat results.csv
+
 ```

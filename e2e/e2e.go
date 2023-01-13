@@ -40,6 +40,7 @@ func main() {
 	// Hit the TCP proxy first, this will cause the Envoy to mint certificates for all domains
 	if *seedCertificates {
 		_ = runHTTPTests(newProxyClient(true, nil), domains)
+		os.Exit(0)
 	}
 
 	header := "time,no_proxy,tcp_proxy,https_proxy\n"
