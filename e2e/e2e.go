@@ -10,68 +10,89 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
 	"sort"
+	"text/tabwriter"
 	"time"
 
 	"github.com/epk/envoy-egress-mitm/cfssl"
 	"github.com/sourcegraph/conc/pool"
+	"github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-const topDomainsURL = "https://raw.githubusercontent.com/Kikobeats/top-sites/master/top-sites.json"
+var (
+	iterations = pflag.IntP("iterations", "i", 20, "Number of iterations to run")
+	printDiff  = pflag.BoolP("print-diff", "p", false, "Print the diff between request success/failure (No Proxy vs HTTPS Proxy)")
+	outFile    = pflag.StringP("out-file", "o", "results.csv", "Output file to write results to")
 
-type Domain struct {
-	RootDomain string `json:"rootDomain,omitempty"`
-}
+	seedCertificates = pflag.BoolP("seed-certificates", "s", false, "Seed certificates and quit")
+)
 
 func main() {
-	certPool := x509.NewCertPool()
-	certPool.AppendCertsFromPEM(cfssl.CA)
+	pflag.Parse()
 
-	var domains []Domain
-	resp, err := http.Get(topDomainsURL)
+	domains, err := domainsList()
 	if err != nil {
-		log.Fatal(fmt.Errorf("error getting top domains: %v", err))
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		log.Fatal(fmt.Errorf("error getting top domains: %v", resp.Status))
+		log.Fatalf("error getting domains: %v\n", err)
 	}
 
-	if err := json.NewDecoder(resp.Body).Decode(&domains); err != nil {
-		log.Fatal(fmt.Errorf("error decoding top domains: %v", err))
+	// Hit the TCP proxy first, this will cause the Envoy to mint certificates for all domains
+	if *seedCertificates {
+		_ = runHTTPTests(newProxyClient(true, nil), domains)
 	}
 
-	sort.SliceStable(domains, func(i, j int) bool {
-		return domains[i].RootDomain < domains[j].RootDomain
-	})
+	header := "time,no_proxy,tcp_proxy,https_proxy\n"
+	var results []string
 
-	// log.Println("Starting test run....")
-	// log.Println("Total domains:", len(domains))
+	for i := 0; i < *iterations; i++ {
+		// Test without Proxy
+		noProxy := runHTTPTests(newProxyClient(false, nil), domains)
 
-	// Test without Proxy
-	successfulDomains := runHTTPTests(newProxyClient(false, nil), domains)
+		// Test with Proxy but without injecting root CA (L4/TCP)
+		tcpProxy := runHTTPTests(newProxyClient(true, nil), domains)
 
-	// Test with Proxy but without injecting root CA
-	// tcpProxysuccessfulDomains := runHTTPTests(newProxyClient(true, nil), domains)
-	// log.Println("Successful 200 OK(s) with TCP/L4 proxy", len(tcpProxysuccessfulDomains))
+		// Test with Proxy and injecting root CA (L7/HTTPS)
+		httpsProxy := runHTTPTests(newProxyClient(true, cfssl.CertPool()), domains)
 
-	// log.Println("Sleeping for 2 minutes to allow for Envoy to pick up new config changes...")
-	// time.Sleep(2 * time.Minute)
+		results = append(results, fmt.Sprintf("%s,%d,%d,%d\n", time.Now().Format("02-Jan-2006 15:04:05"), len(noProxy), len(tcpProxy), len(httpsProxy)))
 
-	// Test with Proxy and injecting root CA
-	httpsProxysuccessfulDomains := runHTTPTests(newProxyClient(true, certPool), domains)
+		if *printDiff {
+			fmt.Printf("Iteration %d\n", i+1)
+			fmt.Printf("No Proxy: %d\n", len(noProxy))
+			fmt.Printf("HTTPS Proxy: %d\n", len(httpsProxy))
+			fmt.Printf("diff: \n")
 
-	fmt.Printf("%d,%d\n", len(successfulDomains), len(httpsProxysuccessfulDomains))
+			w := tabwriter.NewWriter(os.Stdout, 1, 1, 1, ' ', tabwriter.AlignRight)
+			fmt.Fprintf(w, "Domain\t|No Proxy\t|HTTPS Proxy|\n")
 
-	// Print difference between no proxy and TCP proxy
-	// log.Println("Domains that failed with TCP proxy but succeeded without proxy:")
-	// log.Println(getDiff(successfulDomains, tcpProxysuccessfulDomains))
+			for _, domain := range getDiff(noProxy, httpsProxy) {
+				fmt.Fprintf(w, "%s\t|✅\t|❌|\n", domain)
+			}
+			w.Flush()
 
-	// // Print difference between no proxy and HTTPS proxy
-	// log.Println("Domains that failed with HTTPS proxy but succeeded without proxy:")
-	// log.Println(getDiff(successfulDomains, httpsProxysuccessfulDomains))
+			fmt.Println("")
+		}
+	}
+
+	_ = os.Remove(*outFile)
+	f, err := os.OpenFile(*outFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Fatalf("error opening file: %v\n", err)
+	}
+	defer f.Close()
+
+	if _, err := f.WriteString(header); err != nil {
+		log.Fatalf("error writing to file: %v\n", err)
+	}
+
+	for _, result := range results {
+		if _, err := f.WriteString(result); err != nil {
+			log.Fatalf("error writing to file: %v\n", err)
+		}
+	}
+
+	fmt.Printf("Results written to %s\n", *outFile)
 }
 
 func getDiff(a, b []string) []string {
@@ -87,25 +108,22 @@ func getDiff(a, b []string) []string {
 	return diff
 }
 
-func runHTTPTests(client *http.Client, domains []Domain) []string {
-	p := pool.NewWithResults[string]().WithMaxGoroutines(50)
+func runHTTPTests(client *http.Client, domains []string) []string {
+	p := pool.NewWithResults[string]().WithMaxGoroutines(20)
 
 	for _, domain := range domains {
 		domain := domain
 
 		p.Go(func() string {
-			resp, err := client.Get(fmt.Sprintf("https://%s", domain.RootDomain))
+			resp, err := client.Get(fmt.Sprintf("https://%s", domain))
 			if err != nil {
 				return ""
 			}
 			defer resp.Body.Close()
-
-			// discard response body to avoid leaking connections
 			_, _ = io.Copy(io.Discard, resp.Body)
-			// log.Printf("[L4/TCP] Response from %s: %v\n", domain.RootDomain, resp.Status)
 
 			if resp.StatusCode == http.StatusOK {
-				return domain.RootDomain
+				return domain
 			}
 
 			return ""
@@ -113,17 +131,18 @@ func runHTTPTests(client *http.Client, domains []Domain) []string {
 	}
 
 	result := p.Wait()
-	successfulDomains := []string{}
+
+	success := []string{}
 	for _, domain := range result {
 		if domain != "" {
-			successfulDomains = append(successfulDomains, domain)
+			success = append(success, domain)
 		}
 	}
-	sort.SliceStable(successfulDomains, func(i, j int) bool {
-		return successfulDomains[i] < successfulDomains[j]
+	sort.SliceStable(success, func(i, j int) bool {
+		return success[i] < success[j]
 	})
 
-	return successfulDomains
+	return success
 }
 
 // When proxy is true and pool is nil
@@ -160,4 +179,37 @@ func newProxyClient(proxy bool, pool *x509.CertPool) *http.Client {
 		Transport: transport,
 		Timeout:   time.Second * 1,
 	}
+}
+
+type Domain struct {
+	RootDomain string `json:"rootDomain,omitempty"`
+}
+
+func domainsList() ([]string, error) {
+	var domains []Domain
+
+	resp, err := http.Get("https://raw.githubusercontent.com/Kikobeats/top-sites/master/top-sites.json")
+	if err != nil {
+		return []string{}, fmt.Errorf("error getting top domains: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return []string{}, fmt.Errorf("error getting top domains: %v", resp.Status)
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&domains); err != nil {
+		return []string{}, fmt.Errorf("error decoding top domains: %v", err)
+	}
+
+	sort.SliceStable(domains, func(i, j int) bool {
+		return domains[i].RootDomain < domains[j].RootDomain
+	})
+
+	var result []string
+	for _, domain := range domains {
+		result = append(result, domain.RootDomain)
+	}
+
+	return result, nil
 }

@@ -5,9 +5,11 @@ import (
 	"log"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/epk/envoy-egress-mitm/types"
 	"github.com/fsnotify/fsnotify"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 func NewConfigStore(path string) *CertStore {
@@ -55,14 +57,24 @@ func (c *CertStore) StartWatcher() (<-chan struct{}, error) {
 
 				switch event.Op {
 				case fsnotify.Create, fsnotify.Write:
-					cert, err := c.readCerficateFromDisk(event.Name)
-					if err != nil {
-						log.Println("error reading certificate from disk:", err)
-						continue
-					}
+					err := wait.ExponentialBackoff(wait.Backoff{
+						Duration: 100 * time.Millisecond,
+						Factor:   1.5,
+						Steps:    5,
+					}, func() (bool, error) {
+						cert, err := c.readCerficateFromDisk(event.Name)
+						if err != nil {
+							return false, nil
+						}
 
-					c.updateCertificate(event.Name, cert)
-					c.updateCh <- struct{}{}
+						c.updateCertificate(event.Name, cert)
+						c.updateCh <- struct{}{}
+						return true, nil
+					})
+
+					if err != nil {
+						log.Println("[backoff] error reading certificate from disk:", err, event.Name)
+					}
 				case fsnotify.Remove:
 					c.deleteCertificate(event.Name)
 				}
