@@ -2,6 +2,7 @@ package builders
 
 import (
 	"fmt"
+	"time"
 
 	envoy_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
@@ -13,6 +14,7 @@ import (
 	"github.com/epk/envoy-egress-mitm/types"
 	"github.com/golang/protobuf/ptypes/any"
 	"google.golang.org/protobuf/types/known/anypb"
+	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 func BuildALSCluster() (*envoy_cluster_v3.Cluster, error) {
@@ -113,8 +115,15 @@ func BuildManualUpstream(cert *types.Certificate) (*envoy_cluster_v3.Cluster, er
 	httpsOpts := &envoy_extensions_upstream_http_v3.HttpProtocolOptions{
 		UpstreamProtocolOptions: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_AutoConfig{
 			AutoConfig: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_AutoHttpConfig{
-				HttpProtocolOptions:  &envoy_core_v3.Http1ProtocolOptions{},
-				Http2ProtocolOptions: &envoy_core_v3.Http2ProtocolOptions{},
+				HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{},
+				Http2ProtocolOptions: &envoy_core_v3.Http2ProtocolOptions{
+					AllowConnect: true,
+					ConnectionKeepalive: &envoy_core_v3.KeepaliveSettings{
+						Interval:               durationpb.New(30 * time.Second),
+						Timeout:                durationpb.New(5 * time.Second),
+						ConnectionIdleInterval: durationpb.New(15 * time.Second),
+					},
+				},
 			},
 		},
 	}

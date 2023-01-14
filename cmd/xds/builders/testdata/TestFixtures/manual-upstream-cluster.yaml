@@ -26,4 +26,9 @@ typed_extension_protocol_options:
     '@type': type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
     auto_config:
       http_protocol_options: {}
-      http2_protocol_options: {}
+      http2_protocol_options:
+        allow_connect: true
+        connection_keepalive:
+          connection_idle_interval: 15s
+          interval: 30s
+          timeout: 5s
