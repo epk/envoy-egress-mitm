@@ -13,7 +13,7 @@ dynamic_resources:
     resource_api_version: V3
     initial_fetch_timeout: 15s
     api_config_source:
-      api_type: GRPC
+      api_type: DELTA_GRPC
       transport_api_version: V3
       grpc_services:
         - envoy_grpc:
@@ -23,7 +23,7 @@ dynamic_resources:
     resource_api_version: V3
     initial_fetch_timeout: 15s
     api_config_source:
-      api_type: GRPC
+      api_type: DELTA_GRPC
       transport_api_version: V3
       grpc_services:
         - envoy_grpc:
