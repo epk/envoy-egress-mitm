@@ -9,26 +9,19 @@ admin:
       port_value: 9901
 
 dynamic_resources:
+  ads_config:
+    api_type: DELTA_GRPC
+    transport_api_version: V3
+    set_node_on_first_message_only: true
+    grpc_services:
+    - envoy_grpc:
+        cluster_name: xds_cluster
   cds_config:
     resource_api_version: V3
-    initial_fetch_timeout: 15s
-    api_config_source:
-      api_type: DELTA_GRPC
-      transport_api_version: V3
-      grpc_services:
-        - envoy_grpc:
-            cluster_name: xds_cluster
-      set_node_on_first_message_only: true
+    ads: {}
   lds_config:
     resource_api_version: V3
-    initial_fetch_timeout: 15s
-    api_config_source:
-      api_type: DELTA_GRPC
-      transport_api_version: V3
-      grpc_services:
-        - envoy_grpc:
-            cluster_name: xds_cluster
-      set_node_on_first_message_only: true
+    ads: {}
 
 
 static_resources:

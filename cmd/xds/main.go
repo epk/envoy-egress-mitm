@@ -31,7 +31,7 @@ func main() {
 	ctx := context.Background()
 
 	// Create cache
-	cache := envoy_cache_v3.NewSnapshotCache(false, envoy_cache_v3.IDHash{}, nil)
+	cache := envoy_cache_v3.NewSnapshotCache(true, envoy_cache_v3.IDHash{}, nil)
 
 	store := certstore.NewConfigStore(certsDir)
 
