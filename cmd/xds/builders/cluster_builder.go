@@ -79,7 +79,9 @@ func BuildALSCluster() (*envoy_cluster_v3.Cluster, error) {
 
 func BuildDynamicForwardProxyCluster() (*envoy_cluster_v3.Cluster, error) {
 	dfpc := envoy_dynamic_forward_proxy_cluster_v3.ClusterConfig{
-		DnsCacheConfig:            defaultDNSCacheConfig(),
+		ClusterImplementationSpecifier: &envoy_dynamic_forward_proxy_cluster_v3.ClusterConfig_DnsCacheConfig{
+			DnsCacheConfig: defaultDNSCacheConfig(),
+		},
 		AllowCoalescedConnections: true,
 	}
 
